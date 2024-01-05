@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.views import View
-from core.models import Profile
+from core.models import Profile, Movie
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from .forms import ProfileForm
@@ -37,4 +37,37 @@ class ProfileCreate(View):
                 return redirect('core:profile_list')
         return render(request,'profileCreate.html',{'form':form})
     
+    
+method_decorator(login_required,name='dispatch')
+class Watch(View):
+    def get(self,request, profile_id,*args, **kwargs):
+        try:
+            profile = Profile.objects.get(uuid=profile_id)
+            movies = Movie.objects.filter(age_limit=profile.age_limit)
+            
+            if profile not in request.user.profiles.all():
+                return redirect(to='core:profile_list')
+            return render(request, 'movieList.html',{'movies':movies})
+        except Profile.DoesNotExist:
+            return redirect(to='core:profile_list')
 
+
+method_decorator(login_required,name='dispatch')
+class ShowMovieDetail(View):
+    def get(self,request, movie_id,*args, **kwargs):
+        try:
+            movie = Movie.objects.get(uuid=movie_id)
+            return render(request,'movieDetail.html',{'movie':movie})
+        except Movie.DoesNotExist:
+            return redirect(to='core:profile_list')
+        
+
+method_decorator(login_required,name='dispatch')
+class ShowMovie(View):
+    def get(self,request, movie_id,*args, **kwargs):
+        try:
+            movie = Movie.objects.get(uuid=movie_id)
+            movie = movie.videos.values()
+            return render(request,'showMovie.html',{'movie':list(movie)})
+        except Movie.DoesNotExist:
+            return redirect(to='core:profile_list')
